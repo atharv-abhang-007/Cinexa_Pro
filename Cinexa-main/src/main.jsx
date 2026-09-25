@@ -1,44 +1,27 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
+import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 import './index.css';
 import App from './App.jsx';
 import Error from './components/Error.jsx';
-import { useState } from 'react';
-import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import Movies from './components/Movies';
-import AllMovies from './components/AllMovies';
-import MovieDisplay from './components/MovieDisplay';
-import LanguageContext from './contexts/LanguageContext';
-import { LanguageContextProvider } from './contexts/LanguageContext';
+import Movies from './components/Movies.jsx';
+import AllMovies from './components/AllMovies.jsx';
+import MovieDisplay from './components/MovieDisplay.jsx';
+import { LanguageContextProvider } from './contexts/LanguageContext.jsx';
+
 const appRouter = createBrowserRouter([
-  {
-    path: '/',
-    element: <App />,
-    errorElement: <Error />,
-  },
-  {
-    path: '/movies/:movieCategory',
-    element: <Movies />,
-  },
-  {
-    path: '/movies',
-    element: <AllMovies />,
-  },
-  {
-    path: '/movie/:movieId',
-    element: <MovieDisplay />,
-  },
+  { path: '/', element: <App />, errorElement: <Error /> },
+  { path: '/movies/:movieCategory', element: <Movies />, errorElement: <Error /> },
+  { path: '/movies', element: <AllMovies />, errorElement: <Error /> },
+  { path: '/movie/:movieId', element: <MovieDisplay />, errorElement: <Error /> },
+  { path: '*', element: <Error /> },
 ]);
 
-const Root = () => {
-  const [language, setLanguage] = useState('English');
-
-  return (
-    <LanguageContextProvider>
-      <RouterProvider router={appRouter} />
-    </LanguageContextProvider>
-  );
-};
+const Root = () => (
+  <LanguageContextProvider>
+    <RouterProvider router={appRouter} />
+  </LanguageContextProvider>
+);
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

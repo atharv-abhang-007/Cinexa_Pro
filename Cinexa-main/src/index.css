@@ -332,3 +332,69 @@ header {
     font-size: 13px;
   }
 }
+
+button {
+  font: inherit;
+}
+
+.logo-button {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.poster-placeholder {
+  display: grid;
+  place-items: center;
+  min-height: 260px;
+  background: #222;
+  color: #aaa;
+}
+
+.movie-rating {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffd700;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.movie-card {
+  position: relative;
+}
+
+.error-text {
+  text-align: center;
+  padding: 2rem;
+}
+
+.error-text button {
+  margin-top: 1rem;
+  padding: 0.55rem 1rem;
+  border: 0;
+  border-radius: 6px;
+  background: var(--primary-color);
+  color: #fff;
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .header,
+  .top-bar {
+    padding: 1rem;
+  }
+
+  .nav input,
+  .search-input {
+    width: min(45vw, 200px);
+  }
+
+  .hero-content h1 {
+    font-size: 2rem;
+  }
+}

@@ -1,16 +1,49 @@
-# React + Vite
+# Cinexa
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React + Vite movie discovery app powered by TMDB.
 
-Currently, two official plugins are available:
+## Run locally
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+1. Install Node.js 20+.
+2. Open this folder in VS Code.
+3. Install dependencies:
 
-## React Compiler
+```bash
+npm install
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+4. Create a `.env` file in the project root:
 
-## Expanding the ESLint configuration
+```env
+VITE_API_KEY=your_tmdb_api_key
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+5. Start the development server:
+
+```bash
+npm run dev
+```
+
+6. Open the local URL shown by Vite (normally `http://localhost:5173`).
+
+## Production check
+
+```bash
+npm run build
+npm run preview
+```
+
+## Features
+
+- TMDB-powered movie categories
+- Movie search across the main movie page
+- Rating filters
+- Movie detail pages
+- YouTube trailer playback when a trailer is available
+- English/Hindi UI text
+- Responsive movie grids
+- Loading, offline and API error states
+
+## Environment variable
+
+`VITE_API_KEY` is required. Because this is a browser application, a Vite environment variable is bundled into client-side JavaScript and should be treated as public. Restrict the TMDB key to the appropriate domains/usage in the TMDB developer dashboard rather than treating it as a private server secret.

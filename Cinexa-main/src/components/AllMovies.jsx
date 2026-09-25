@@ -1,159 +1,159 @@
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useMemo, useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { url, apiKey } from '../data';
+import { apiKey, fetchJson, imageBaseUrl, url } from '../data';
 import LanguageContext from '../contexts/LanguageContext';
+
+const categories = [
+  ['nowPlaying', 'Now Playing', 'अब चल रही फिल्में'],
+  ['popular', 'Popular', 'लोकप्रिय फिल्में'],
+  ['topRated', 'Top Rated', 'टॉप रेटेड'],
+  ['upcoming', 'Upcoming', 'आने वाली फिल्में'],
+];
 
 const AllMovies = () => {
   const navigate = useNavigate();
   const { language } = useContext(LanguageContext);
-
-  const [nowPlaying, setNowPlaying] = useState([]);
-  const [popular, setPopular] = useState([]);
-  const [topRated, setTopRated] = useState([]);
-  const [upcoming, setUpcoming] = useState([]);
-
-  const [loading, setLoading] = useState(false);
+  const [movieLists, setMovieLists] = useState({
+    nowPlaying: [],
+    popular: [],
+    topRated: [],
+    upcoming: [],
+  });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [rating, setRating] = useState(0);
   const [search, setSearch] = useState('');
 
-  const fetchAllMovies = async () => {
-    try {
-      setLoading(true);
-      setError('');
-
-      const [nowPlayingRes, popularRes, topRatedRes, upcomingRes] =
-        await Promise.all([
-          fetch(`${url}now_playing?api_key=${apiKey}`),
-          fetch(`${url}popular?api_key=${apiKey}`),
-          fetch(`${url}top_rated?api_key=${apiKey}`),
-          fetch(`${url}upcoming?api_key=${apiKey}`),
-        ]);
-
-      const nowPlayingData = await nowPlayingRes.json();
-      const popularData = await popularRes.json();
-      const topRatedData = await topRatedRes.json();
-      const upcomingData = await upcomingRes.json();
-
-      setNowPlaying(nowPlayingData.results);
-      setPopular(popularData.results);
-      setTopRated(topRatedData.results);
-      setUpcoming(upcomingData.results);
-    } catch (err) {
-      setError('⚠️ Failed to load movies');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchAllMovies();
-  }, []);
+    let cancelled = false;
 
-  const renderMovies = (movies, sectionId) => {
-    const filtered = movies
-      ?.filter((m) => rating === 0 || m.vote_average >= rating) // rating filter
-      ?.filter(
-        (m) => m.title.toLowerCase().includes(search.toLowerCase()) // search filter
-      );
+    const fetchAllMovies = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-    const scroll = (direction) => {
-      const container = document.getElementById(sectionId);
-      container.scrollLeft += direction === 'left' ? -400 : 400;
+        const [nowPlaying, popular, topRated, upcoming] = await Promise.all(
+          ['now_playing', 'popular', 'top_rated', 'upcoming'].map((category) =>
+            fetchJson(`${url}${category}?api_key=${encodeURIComponent(apiKey)}`)
+          )
+        );
+
+        if (!cancelled) {
+          setMovieLists({
+            nowPlaying: nowPlaying.results ?? [],
+            popular: popular.results ?? [],
+            topRated: topRated.results ?? [],
+            upcoming: upcoming.results ?? [],
+          });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err.message || 'Failed to load movies.');
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
-    return (
-      <div className="row-container">
-        {filtered?.map((movie) => (
-          <div key={movie.id} className="row-card">
-            <Link to={`/movie/${movie.id}`}>
-              <div className="card-img-container">
-                <img
-                  src={`https://image.tmdb.org/t/p/w500${movie.poster_path}`}
-                  alt={movie.title}
-                />
+    fetchAllMovies();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-                {/* ⭐ Rating */}
-                <div className="rating-badge">
-                  ⭐ {movie.vote_average?.toFixed(1)}
-                </div>
+  const filteredLists = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return Object.fromEntries(
+      Object.entries(movieLists).map(([key, list]) => [
+        key,
+        list.filter((movie) => {
+          const title = movie.title || movie.name || '';
+          const matchesSearch = !query || title.toLowerCase().includes(query);
+          const matchesRating = rating === 0 || (movie.vote_average ?? 0) >= rating;
+          return matchesSearch && matchesRating;
+        }),
+      ])
+    );
+  }, [movieLists, rating, search]);
+
+  const renderMovies = (movies, sectionId) => (
+    <div className="row-container" id={sectionId}>
+      {movies.map((movie) => {
+        const title = movie.title || movie.name || 'Untitled';
+        return (
+          <div key={movie.id} className="row-card">
+            <Link to={`/movie/${movie.id}`} aria-label={`Open ${title}`}>
+              <div className="card-img-container">
+                {movie.poster_path ? (
+                  <img
+                    src={`${imageBaseUrl}w500${movie.poster_path}`}
+                    alt={title}
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="poster-placeholder">No poster</div>
+                )}
+                <div className="rating-badge">⭐ {(movie.vote_average ?? 0).toFixed(1)}</div>
               </div>
             </Link>
           </div>
-        ))}
-      </div>
-    );
-  };
+        );
+      })}
+    </div>
+  );
 
   return (
     <div className="all-movies-page">
-      {/* HEADER */}
       <div className="top-bar">
-        <h2 className="logo" onClick={() => navigate('/')}>
+        <button className="logo logo-button" onClick={() => navigate('/')}>
           {language === 'Hindi' ? 'सिनेक्सा' : 'Cinexa'}
-        </h2>
+        </button>
 
         <input
-          type="text"
+          type="search"
           className="search-input"
-          placeholder={
-            language === 'Hindi' ? '🔍 फिल्म खोजें...' : '🔍 Search movies...'
-          }
+          placeholder={language === 'Hindi' ? '🔍 फिल्म खोजें...' : '🔍 Search movies...'}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
+          aria-label="Search movies"
         />
 
         <button className="back-btn" onClick={() => navigate('/')}>
           {language === 'Hindi' ? '← होम पर वापस जाएं' : '← Back To Home'}
         </button>
       </div>
+
       <div className="filter-container">
-        <select
-          value={rating}
-          onChange={(e) => setRating(Number(e.target.value))}
-        >
-          <option value="0">
-            {language === 'Hindi' ? 'सभी रेटिंग' : 'All Ratings'}
-          </option>
-          <option value="5">⭐ 5+</option>
-          <option value="6">⭐ 6+</option>
+        <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
+          <option value="0">{language === 'Hindi' ? 'सभी रेटिंग' : 'All Ratings'}</option>
           <option value="7">⭐ 7+</option>
           <option value="8">⭐ 8+</option>
+          <option value="8.5">⭐ 8.5+</option>
+          <option value="9">⭐ 9+</option>
         </select>
       </div>
 
       {loading && <p className="loading-text">Loading Movies...</p>}
-      {error && <p className="error-text">{error}</p>}
+      {error && (
+        <div className="error-text" role="alert">
+          <p>{error}</p>
+          <button onClick={() => window.location.reload()}>Retry</button>
+        </div>
+      )}
 
       {!loading && !error && (
         <>
-          <section>
-            <h2 className="section-title">
-              {language === 'Hindi' ? 'अब चल रही फिल्में' : 'Now Playing'}
-            </h2>
-            {renderMovies(nowPlaying)}
-          </section>
-
-          <section>
-            <h2 className="section-title">
-              {language === 'Hindi' ? 'लोकप्रिय फिल्में' : 'Popular'}
-            </h2>
-            {renderMovies(popular)}
-          </section>
-
-          <section>
-            <h2 className="section-title">
-              {language === 'Hindi' ? 'टॉप रेटेड' : 'Top Rated'}
-            </h2>
-            {renderMovies(topRated)}
-          </section>
-
-          <section>
-            <h2 className="section-title">
-              {language === 'Hindi' ? 'आने वाली फिल्में' : 'Upcoming'}
-            </h2>
-            {renderMovies(upcoming)}
-          </section>
+          {categories.map(([key, english, hindi]) => (
+            <section key={key}>
+              <h2 className="section-title">{language === 'Hindi' ? hindi : english}</h2>
+              {filteredLists[key]?.length ? (
+                renderMovies(filteredLists[key], key)
+              ) : (
+                <p className="no-results">No results found.</p>
+              )}
+            </section>
+          ))}
         </>
       )}
     </div>
